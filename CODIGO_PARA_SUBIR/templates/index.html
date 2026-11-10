@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Cartera y Vencimientos 3D | Agroindustriales Cañaveralejo</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Highcharts & Highcharts 3D CDN -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Badges strictly in the 3 designated colors */
+        .badge-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+        .badge-yellow { background-color: #fef3c7; color: #854d0e; border: 1px solid #facc15; }
+        .badge-green { background-color: #dcfce7; color: #166534; border: 1px solid #4ade80; }
+        
+        .row-red { background-color: #fff5f5; }
+        .row-yellow { background-color: #fffbeb; }
+        .row-green { background-color: #f0fdf4; }
+        
+        /* 3D Card Shadows */
+        .card-3d {
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            transition: all 0.2s ease;
+        }
+        .card-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -5px rgba(15, 23, 42, 0.12), 0 10px 12px -6px rgba(15, 23, 42, 0.06);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-navy-950 text-white shadow-xl sticky top-0 z-40 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 via-amber-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-950/40">
+                    <i data-lucide="shield-alert" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                        <span>CONTROL DE CARTERA</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Gráficas 3D</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium" id="headerCompany">AGROINDUSTRIALES CAÑAVERALEJO S.A.S</p>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center space-x-3">
+                <button onclick="openUploadModal()" class="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition shadow-sm">
+                    <i data-lucide="upload-cloud" class="w-4 h-4 mr-1.5 text-emerald-400"></i>
+                    <span>Cargar PDF</span>
+                </button>
+                <button onclick="exportToExcel()" class="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-md shadow-emerald-900/30">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i>
+                    <span>Exportar Excel</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Top Date Controller Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 card-3d">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+                            <span id="activeFileName">Cargando reporte...</span>
+                        </span>
+                        <span class="text-xs text-slate-500 font-medium" id="reportDateBadge">Fecha emisión: --</span>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-900 mt-1">Análisis y Gestión de Facturas Vencidas</h2>
+                    <p class="text-xs text-slate-500">Control por semáforo de 3 colores: 🔴 Rojo (>90d), 🟡 Amarillo (61-89d), 🟢 Verde (1-59d).</p>
+                </div>
+
+                <!-- Date Controller -->
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex flex-wrap items-center gap-3">
+                    <div class="flex items-center space-x-2">
+                        <label for="reviewDatePicker" class="text-xs font-bold text-slate-700 flex items-center">
+                            <i data-lucide="calendar" class="w-4 h-4 mr-1 text-slate-500"></i>
+                            Fecha de Revisión:
+                        </label>
+                        <input type="date" id="reviewDatePicker" onchange="onDateChanged()" class="bg-white border border-slate-300 text-slate-900 text-xs rounded-xl focus:ring-emerald-500 focus:border-emerald-500 px-3 py-1.5 font-bold shadow-xs outline-none">
+                    </div>
+
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="setQuickDate('report')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            Fecha PDF
+                        </button>
+                        <button onclick="setQuickDate('today')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            Hoy
+                        </button>
+                        <button onclick="addDays(15)" class="px-2 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200">
+                            +15d
+                        </button>
+                        <button onclick="addDays(30)" class="px-2 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200">
+                            +30d
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3-Color KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Total Cartera -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 card-3d flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Cartera Total</span>
+                    <span class="p-2 rounded-xl bg-slate-100 text-slate-700">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-black text-slate-900 mono" id="kpiTotalCartera">$0</div>
+                    <div class="text-xs text-slate-500 mt-1 flex items-center justify-between font-semibold">
+                        <span id="kpiTotalClients">0 clientes</span>
+                        <span id="kpiTotalInvoices">0 facturas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROJO: > 90 Días -->
+            <div onclick="filterGlobalColor('red')" class="cursor-pointer bg-red-50/70 rounded-2xl p-5 border-2 border-red-300 card-3d flex flex-col justify-between relative overflow-hidden group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-red-600 animate-pulse"></span>
+                        <span class="text-xs font-black uppercase tracking-wider text-red-950">Mora &gt; 90 Días</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-red-600 text-white uppercase tracking-wider">ROJO</span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-black text-red-900 mono" id="kpiRedTotal">$0</div>
+                    <div class="text-xs text-red-700 font-bold mt-1 flex items-center justify-between">
+                        <span id="kpiRedCount">0 facturas</span>
+                        <span id="kpiRedPercent" class="bg-red-200/60 px-2 py-0.5 rounded-md">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AMARILLO: 61 - 89 Días -->
+            <div onclick="filterGlobalColor('yellow')" class="cursor-pointer bg-amber-50/70 rounded-2xl p-5 border-2 border-amber-300 card-3d flex flex-col justify-between relative overflow-hidden group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <span class="text-xs font-black uppercase tracking-wider text-amber-950">Mora 61-89 Días</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-amber-500 text-amber-950 uppercase tracking-wider">AMARILLO</span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-black text-amber-950 mono" id="kpiYellowTotal">$0</div>
+                    <div class="text-xs text-amber-800 font-bold mt-1 flex items-center justify-between">
+                        <span id="kpiYellowCount">0 facturas</span>
+                        <span id="kpiYellowPercent" class="bg-amber-200/60 px-2 py-0.5 rounded-md">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VERDE: 1 - 59 Días -->
+            <div onclick="filterGlobalColor('green')" class="cursor-pointer bg-emerald-50/70 rounded-2xl p-5 border-2 border-emerald-300 card-3d flex flex-col justify-between relative overflow-hidden group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+                        <span class="text-xs font-black uppercase tracking-wider text-emerald-950">Mora 1-59 Días</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-emerald-600 text-white uppercase tracking-wider">VERDE</span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-black text-emerald-950 mono" id="kpiGreenTotal">$0</div>
+                    <div class="text-xs text-emerald-800 font-bold mt-1 flex items-center justify-between">
+                        <span id="kpiGreenCount">0 facturas</span>
+                        <span id="kpiGreenPercent" class="bg-emerald-200/60 px-2 py-0.5 rounded-md">0%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3D CHARTS SECTION (Strictly in the 3 designated colors: Red, Yellow, Green) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- 3D Donut Chart -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 card-3d flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span>Distribución 3D de Cartera por Color</span>
+                    </h3>
+                    <span class="text-2xs font-bold text-slate-400">Interactivo 3D</span>
+                </div>
+                <div id="chart3dPie" class="w-full h-72"></div>
+            </div>
+
+            <!-- 3D Bar / Column Chart -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 card-3d flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <span>Monto en Dinero por Rango 3D (Millones COP)</span>
+                    </h3>
+                    <span class="text-2xs font-bold text-slate-400">Profundidad 3D</span>
+                </div>
+                <div id="chart3dBar" class="w-full h-72"></div>
+            </div>
+
+        </div>
+
+        <!-- Filter and Search Toolbar -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 card-3d space-y-3">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                
+                <!-- Live Search -->
+                <div class="relative flex-1 max-w-md">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Buscar cliente, NIT o factura..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium">
+                </div>
+
+                <!-- Global Filter Pills -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button onclick="setGlobalFilter('all')" id="btnFilterAll" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-navy-950 text-white shadow-xs">
+                        Todos (<span id="countFilterAll">0</span>)
+                    </button>
+                    <button onclick="setGlobalFilter('red')" id="btnFilterRed" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-red-700 hover:bg-red-50 border border-slate-200">
+                        🔴 &gt; 90 Días (<span id="countFilterRed">0</span>)
+                    </button>
+                    <button onclick="setGlobalFilter('yellow')" id="btnFilterYellow" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-amber-800 hover:bg-amber-50 border border-slate-200">
+                        🟡 61-89 Días (<span id="countFilterYellow">0</span>)
+                    </button>
+                    <button onclick="setGlobalFilter('green')" id="btnFilterGreen" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-emerald-800 hover:bg-emerald-50 border border-slate-200">
+                        🟢 1-59 Días (<span id="countFilterGreen">0</span>)
+                    </button>
+                </div>
+
+                <!-- Sorting & Toggle All -->
+                <div class="flex items-center space-x-2">
+                    <select id="sortSelect" onchange="applyFilters()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="urgency_desc">Prioridad: 🔴 Rojos primero</option>
+                        <option value="saldo_desc">Mayor Saldo Total</option>
+                        <option value="name_asc">Nombre Cliente (A-Z)</option>
+                    </select>
+                    <button onclick="toggleExpandAll()" class="px-2.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition flex items-center gap-1">
+                        <i data-lucide="chevrons-up-down" class="w-4 h-4"></i>
+                        <span>Alternar Todos</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Clients & Invoices Container -->
+        <div id="clientsContainer" class="space-y-4">
+            <!-- Rendered dynamically -->
+        </div>
+
+    </main>
+
+    <!-- WhatsApp Modal (Clean, Boxed Preview & Direct Send) -->
+    <div id="whatsappModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150">
+            
+            <!-- WhatsApp Brand Header -->
+            <div class="bg-[#128C7E] px-6 py-4 text-white flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                        <i data-lucide="message-circle" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold" id="waModalTitle">Enviar Estado de Cuenta por WhatsApp</h3>
+                        <p class="text-xs text-emerald-100 font-medium" id="waModalClientTitle">Cliente • NIT</p>
+                    </div>
+                </div>
+                <button onclick="closeWhatsAppModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                
+                <!-- Phone input with validation -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-slate-700">Número de WhatsApp del Cliente:</label>
+                        <span class="text-2xs font-semibold text-emerald-700" id="waPhoneStatus">Móvil Colombia (+57)</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <i data-lucide="phone" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="waPhoneInput" placeholder="+57 300 123 4567" class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold">
+                        </div>
+                        <button onclick="formatAndVerifyPhone()" class="px-3.5 py-2 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition">
+                            Validar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Color Selection Tabs inside Modal -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Enviar Facturas por Color:</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="switchWaColor('all')" id="btnWaTabAll" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
+                            📋 Todas
+                        </button>
+                        <button onclick="switchWaColor('red')" id="btnWaTabRed" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
+                            🔴 Solo &gt; 90d
+                        </button>
+                        <button onclick="switchWaColor('yellow')" id="btnWaTabYellow" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
+                            🟡 Solo 61-89d
+                        </button>
+                        <button onclick="switchWaColor('green')" id="btnWaTabGreen" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
+                            🟢 Solo 1-59d
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Boxed Message Preview -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
+                            <span>Mensaje Organizado en Recuadros:</span>
+                        </span>
+                        <button onclick="copyWaText()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            <span id="copyTextFeedback">Copiar Texto</span>
+                        </button>
+                    </div>
+                    <div class="bg-[#e5ddd5] p-4 rounded-2xl border border-slate-300 max-h-64 overflow-y-auto shadow-inner">
+                        <div class="bg-white rounded-xl p-3.5 text-xs text-slate-800 shadow-sm whitespace-pre-wrap font-mono leading-relaxed" id="waPreviewText">
+                            Generando vista previa...
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+                <button onclick="closeWhatsAppModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition">
+                    Cerrar
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="downloadActiveWaPdf()" class="px-3.5 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition flex items-center gap-1.5 shadow-sm" title="Descargar PDF de este estado para adjuntar en WhatsApp">
+                        <i data-lucide="file-down" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Descargar PDF</span>
+                    </button>
+                    <button onclick="copyWaText()" class="px-3.5 py-2 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Copiar Mensaje</span>
+                    </button>
+                    <button onclick="launchWhatsApp()" class="px-4 py-2 text-xs font-black bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-xl shadow-lg transition flex items-center gap-1.5">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Abrir en WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Upload PDF Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                            <i data-lucide="file-up" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900">Actualizar PDF de Cartera</h3>
+                            <p class="text-xs text-slate-500">Cargue un nuevo PDF de Siesa Enterprise Uno</p>
+                        </div>
+                    </div>
+                    <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div onclick="document.getElementById('pdfFileInput').click()" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-50 hover:bg-emerald-50/30">
+                    <input type="file" id="pdfFileInput" accept=".pdf" class="hidden" onchange="handleFileSelected(event)">
+                    <i data-lucide="cloud-upload" class="w-10 h-10 text-slate-400 mx-auto mb-2"></i>
+                    <p class="text-xs font-bold text-slate-700">Haga clic o arrastre aquí el nuevo PDF</p>
+                    <p class="text-2xs text-slate-400 mt-1">Soporta reportes UFCC2021 de Siesa</p>
+                </div>
+
+                <div id="uploadProgress" class="mt-4 hidden text-center">
+                    <div class="flex items-center justify-center space-x-2 text-xs font-bold text-emerald-600">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        <span>Procesando archivo...</span>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-600 mb-2">Archivos disponibles:</h4>
+                    <div id="serverFilesList" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+                <button onclick="closeUploadModal()" class="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-800">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 bg-navy-950 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 text-xs transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none z-50">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMessage" class="font-bold">Acción completada</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let rawData = null;
+        let currentGlobalFilter = 'all'; // 'all', 'red', 'yellow', 'green'
+        
+        // Track per-client color filter: { [nit]: 'all' | 'red' | 'yellow' | 'green' }
+        let clientColorFilters = {};
+        let expandedNits = new Set();
+
+        // Active WhatsApp Modal State
+        let activeWaClient = null;
+        let activeWaTemplates = null;
+        let activeWaSelectedColor = 'all';
+
+        // 3D Chart Instances
+        let chart3dPieInstance = null;
+        let chart3dBarInstance = null;
+
+        const currencyFmt = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        });
+
+        function formatMoney(amount) {
+            return currencyFmt.format(amount || 0);
+        }
+
+        function getSessionId() {
+            let sid = localStorage.getItem('cartera_session_id');
+            if (!sid) {
+                sid = 'vendedor_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                localStorage.setItem('cartera_session_id', sid);
+            }
+            return sid;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            fetchData();
+        });
+
+        async function fetchData(customDate = null) {
+            try {
+                const sid = getSessionId();
+                let url = `/api/data?session_id=${encodeURIComponent(sid)}`;
+                if (customDate) url += `&review_date=${customDate}`;
+                
+                const res = await fetch(url, {
+                    headers: { 'X-Session-ID': sid }
+                });
+                const data = await res.json();
+                
+                if (data.status === 'no_data') {
+                    showToast('No hay datos. Cargue un PDF.', 'alert');
+                    return;
+                }
+
+                rawData = data;
+                renderDashboard();
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                showToast('Error al conectar con el servidor', 'alert');
+            }
+        }
+
+        function renderDashboard() {
+            if (!rawData) return;
+            const summary = rawData.summary;
+            const meta = rawData.metadata;
+            const session = rawData.session;
+
+            document.getElementById('headerCompany').textContent = meta.company || 'AGROINDUSTRIALES CAÑAVERALEJO S.A.S';
+            
+            // Session badge and filename
+            const activeFileEl = document.getElementById('activeFileName');
+            if (session && session.is_custom) {
+                activeFileEl.innerHTML = `<span class="text-emerald-700 font-extrabold flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> Mi Cartera: ${session.filename}</span>`;
+            } else {
+                activeFileEl.innerHTML = `<span class="text-amber-800 font-bold flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5 text-amber-600"></i> Demo: ${meta.file_name || 'UFCC2021.P92'} • <span class="underline cursor-pointer" onclick="openUploadModal()">Cargar mi PDF</span></span>`;
+            }
+
+            document.getElementById('reportDateBadge').textContent = `Fecha emisión: ${meta.report_date}`;
+
+            const datePicker = document.getElementById('reviewDatePicker');
+            if (!datePicker.value || datePicker.value !== summary.review_date) {
+                datePicker.value = summary.review_date;
+            }
+
+            // Top KPIs
+            document.getElementById('kpiTotalCartera').textContent = formatMoney(summary.total_cartera);
+            document.getElementById('kpiTotalClients').textContent = `${summary.total_clients} clientes`;
+            document.getElementById('kpiTotalInvoices').textContent = `${summary.total_invoices} facturas`;
+
+            // Rojo > 90 días
+            document.getElementById('kpiRedTotal').textContent = formatMoney(summary.total_red_90);
+            document.getElementById('kpiRedCount').textContent = `${summary.count_red_90} facturas`;
+            const redPct = summary.total_cartera > 0 ? ((summary.total_red_90 / summary.total_cartera) * 100).toFixed(1) : 0;
+            document.getElementById('kpiRedPercent').textContent = `${redPct}%`;
+
+            // Amarillo 61-89 días
+            document.getElementById('kpiYellowTotal').textContent = formatMoney(summary.total_yellow_60);
+            document.getElementById('kpiYellowCount').textContent = `${summary.count_yellow_60} facturas`;
+            const yelPct = summary.total_cartera > 0 ? ((summary.total_yellow_60 / summary.total_cartera) * 100).toFixed(1) : 0;
+            document.getElementById('kpiYellowPercent').textContent = `${yelPct}%`;
+
+            // Verde 1-59 días
+            document.getElementById('kpiGreenTotal').textContent = formatMoney(summary.total_green_30);
+            document.getElementById('kpiGreenCount').textContent = `${summary.count_green_30} facturas`;
+            const grnPct = summary.total_cartera > 0 ? ((summary.total_green_30 / summary.total_cartera) * 100).toFixed(1) : 0;
+            document.getElementById('kpiGreenPercent').textContent = `${grnPct}%`;
+
+            // Global filter counts
+            document.getElementById('countFilterAll').textContent = rawData.clients.length;
+            document.getElementById('countFilterRed').textContent = rawData.clients.filter(c => c.red_count > 0).length;
+            document.getElementById('countFilterYellow').textContent = rawData.clients.filter(c => c.yellow_count > 0).length;
+            document.getElementById('countFilterGreen').textContent = rawData.clients.filter(c => c.green_count > 0).length;
+
+            render3DCharts();
+            applyFilters();
+            lucide.createIcons();
+        }
+
+        // Render Highcharts 3D Charts strictly in the 3 designated colors: Red, Yellow, Green
+        function render3DCharts() {
+            if (!rawData) return;
+            const summary = rawData.summary;
+
+            // 1. Highcharts 3D Donut Chart
+            chart3dPieInstance = Highcharts.chart('chart3dPie', {
+                chart: {
+                    type: 'pie',
+                    options3d: {
+                        enabled: true,
+                        alpha: 45,
+                        beta: 0
+                    },
+                    backgroundColor: 'transparent'
+                },
+                title: { text: null },
+                colors: ['#DC2626', '#F59E0B', '#16A34A'], // Red, Yellow, Green ONLY
+                plotOptions: {
+                    pie: {
+                        innerSize: 100,
+                        depth: 45,
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b><br>{point.percentage:.1f} %',
+                            style: { fontSize: '10px', fontFamily: 'Inter' }
+                        }
+                    }
+                },
+                credits: { enabled: false },
+                exporting: { enabled: false },
+                series: [{
+                    name: 'Saldo',
+                    data: [
+                        ['🔴 >90 Días', summary.total_red_90],
+                        ['🟡 61-89 Días', summary.total_yellow_60],
+                        ['🟢 1-59 Días', summary.total_green_30]
+                    ]
+                }]
+            });
+
+            // 2. Highcharts 3D Column Chart
+            chart3dBarInstance = Highcharts.chart('chart3dBar', {
+                chart: {
+                    type: 'column',
+                    options3d: {
+                        enabled: true,
+                        alpha: 15,
+                        beta: 15,
+                        depth: 50,
+                        viewDistance: 25
+                    },
+                    backgroundColor: 'transparent'
+                },
+                title: { text: null },
+                xAxis: {
+                    categories: ['🔴 >90 Días (Rojo)', '🟡 61-89 Días (Amarillo)', '🟢 1-59 Días (Verde)'],
+                    labels: { style: { fontSize: '11px', fontWeight: 'bold' } }
+                },
+                yAxis: {
+                    title: { text: 'Millones de Pesos ($M)' },
+                    labels: {
+                        formatter: function() { return '$' + (this.value / 1000000).toFixed(0) + 'M'; }
+                    }
+                },
+                colors: ['#DC2626', '#F59E0B', '#16A34A'],
+                plotOptions: {
+                    column: {
+                        depth: 35,
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() { return '$' + (this.y / 1000000).toFixed(1) + 'M'; },
+                            style: { fontSize: '11px', fontWeight: 'bold', fontFamily: 'JetBrains Mono' }
+                        }
+                    }
+                },
+                credits: { enabled: false },
+                legend: { enabled: false },
+                exporting: { enabled: false },
+                series: [{
+                    name: 'Monto en Mora',
+                    data: [
+                        summary.total_red_90,
+                        summary.total_yellow_60,
+                        summary.total_green_30
+                    ]
+                }]
+            });
+        }
+
+        // Filter and Search Handling
+        function setGlobalFilter(filter) {
+            currentGlobalFilter = filter;
+            document.querySelectorAll('.global-filter-btn').forEach(b => {
+                b.className = 'global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200';
+            });
+
+            if (filter === 'all') document.getElementById('btnFilterAll').className = 'global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-navy-950 text-white shadow-xs';
+            if (filter === 'red') document.getElementById('btnFilterRed').className = 'global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white shadow-xs';
+            if (filter === 'yellow') document.getElementById('btnFilterYellow').className = 'global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-amber-950 shadow-xs';
+            if (filter === 'green') document.getElementById('btnFilterGreen').className = 'global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs';
+
+            applyFilters();
+        }
+
+        function filterGlobalColor(color) {
+            setGlobalFilter(color);
+        }
+
+        function applyFilters() {
+            if (!rawData) return;
+            const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            const sortVal = document.getElementById('sortSelect').value;
+
+            let filtered = rawData.clients.filter(cli => {
+                const matchQ = !q || 
+                    cli.name.toLowerCase().includes(q) ||
+                    cli.nit.toLowerCase().includes(q) ||
+                    cli.city.toLowerCase().includes(q) ||
+                    cli.invoices.some(inv => inv.doc_no.toLowerCase().includes(q));
+
+                if (!matchQ) return false;
+
+                if (currentGlobalFilter === 'red') return cli.red_count > 0;
+                if (currentGlobalFilter === 'yellow') return cli.yellow_count > 0;
+                if (currentGlobalFilter === 'green') return cli.green_count > 0;
+                return true;
+            });
+
+            // Sorting
+            filtered.sort((a, b) => {
+                if (sortVal === 'urgency_desc') {
+                    // Red clients first, then Yellow, then Green
+                    if (a.client_priority !== b.client_priority) return a.client_priority - b.client_priority;
+                    return b.total_saldo - a.total_saldo;
+                }
+                if (sortVal === 'saldo_desc') return b.total_saldo - a.total_saldo;
+                if (sortVal === 'name_asc') return a.name.localeCompare(b.name);
+                return 0;
+            });
+
+            renderClients(filtered);
+        }
+
+        // Set Per-Client Color Filter
+        function setClientColorFilter(nit, color) {
+            clientColorFilters[nit] = color;
+            // Always expand when selecting a color
+            expandedNits.add(nit);
+            applyFilters();
+        }
+
+        function renderClients(clients) {
+            const container = document.getElementById('clientsContainer');
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-3xl p-10 text-center border border-slate-200 card-3d">
+                        <i data-lucide="filter-x" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-sm font-bold text-slate-700">No se encontraron clientes con el criterio seleccionado</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = clients.map(cli => {
+                const isExpanded = expandedNits.has(cli.nit);
+                const activeColor = clientColorFilters[cli.nit] || 'all';
+
+                // Invoices strictly ordered: ROJO first, then AMARILLO, then VERDE
+                // Filtered by activeColor if selected
+                let displayInvoices = cli.invoices;
+                if (activeColor === 'red') {
+                    displayInvoices = cli.invoices.filter(inv => inv.alert_level === 'red');
+                } else if (activeColor === 'yellow') {
+                    displayInvoices = cli.invoices.filter(inv => inv.alert_level === 'yellow');
+                } else if (activeColor === 'green') {
+                    displayInvoices = cli.invoices.filter(inv => inv.alert_level === 'green');
+                }
+
+                // Table rows
+                const invoiceRows = displayInvoices.map(inv => {
+                    let rowBg = '';
+                    let pill = '';
+
+                    if (inv.alert_level === 'red') {
+                        rowBg = 'row-red';
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-red inline-flex items-center gap-1">🔴 &gt; 90 Días</span>`;
+                    } else if (inv.alert_level === 'yellow') {
+                        rowBg = 'row-yellow';
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-yellow inline-flex items-center gap-1">🟡 61 - 89 Días</span>`;
+                    } else {
+                        rowBg = 'row-green';
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-green inline-flex items-center gap-1">🟢 1 - 59 Días</span>`;
+                    }
+
+                    return `
+                        <tr class="${rowBg} border-b border-slate-100 hover:brightness-95 transition text-xs">
+                            <td class="py-2.5 px-3 font-bold text-slate-800 mono">${inv.doc_no}</td>
+                            <td class="py-2.5 px-3 text-slate-600 mono">${inv.fec_doc}</td>
+                            <td class="py-2.5 px-3 font-semibold text-slate-700 mono">${inv.fec_vcto}</td>
+                            <td class="py-2.5 px-3 text-center">
+                                <span class="font-extrabold mono text-sm ${inv.dias_vencida > 0 ? 'text-red-700' : 'text-slate-600'}">${inv.dias_vencida} d</span>
+                            </td>
+                            <td class="py-2.5 px-3 text-center">${pill}</td>
+                            <td class="py-2.5 px-3 text-center text-slate-500">${inv.plazo} d</td>
+                            <td class="py-2.5 px-3 text-right text-slate-500 mono">${formatMoney(inv.vlr_doc)}</td>
+                            <td class="py-2.5 px-3 text-right font-black text-slate-900 mono text-sm">${formatMoney(inv.saldo)}</td>
+                            <td class="py-2.5 px-3 text-slate-500 italic max-w-xs truncate">${inv.observaciones || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Action buttons: Descargar PDF and Enviar por WhatsApp divided separately for color and general
+                let actionButtons = '';
+                if (activeColor !== 'all') {
+                    const colorLabel = activeColor === 'red' ? 'Rojas (>90d)' : activeColor === 'yellow' ? 'Amarillas (61-89d)' : 'Verdes (1-59d)';
+                    actionButtons = `
+                        <button onclick="downloadClientPdf('${cli.nit}', '${activeColor}')" class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition gap-1.5 border border-slate-300" title="Descargar PDF de facturas ${colorLabel}">
+                            <i data-lucide="file-down" class="w-4 h-4 text-slate-600"></i>
+                            <span>Descargar PDF</span>
+                        </button>
+                        <button onclick="openWhatsAppModal('${cli.nit}', '${activeColor}')" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-black bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-md transition gap-1.5" title="Enviar facturas ${colorLabel} por WhatsApp">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            <span>WhatsApp</span>
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button onclick="downloadClientPdf('${cli.nit}', 'all')" class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition gap-1.5 border border-slate-300" title="Descargar PDF de Estado de Cuenta Completo">
+                            <i data-lucide="file-down" class="w-4 h-4 text-slate-600"></i>
+                            <span>Descargar PDF</span>
+                        </button>
+                        <button onclick="openWhatsAppModal('${cli.nit}', 'all')" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-black bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-md transition gap-1.5" title="Enviar Estado de Cuenta Completo por WhatsApp">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            <span>WhatsApp</span>
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="bg-white rounded-3xl border border-slate-200 card-3d overflow-hidden">
+                        
+                        <!-- Client Header -->
+                        <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            
+                            <div class="space-y-1.5">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-lg text-xs font-mono font-black bg-slate-100 text-slate-800 border border-slate-200">
+                                        NIT: ${cli.nit}
+                                    </span>
+                                    <h3 class="text-base font-extrabold text-slate-900">${cli.name}</h3>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-4 text-xs text-slate-500 font-medium">
+                                    <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> ${cli.city || 'Bogotá'}</span>
+                                    <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3.5 h-3.5"></i> ${cli.phone || 'Sin tel'}</span>
+                                    <span>${cli.address}</span>
+                                </div>
+
+                                <!-- Color Interactive Buttons -->
+                                <div class="flex flex-wrap items-center gap-1.5 pt-2">
+                                    <button onclick="setClientColorFilter('${cli.nit}', 'all')" class="px-2.5 py-1 rounded-lg text-2xs font-bold transition ${activeColor === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                                        Todas (${cli.invoices.length})
+                                    </button>
+                                    ${cli.red_count > 0 ? `
+                                        <button onclick="setClientColorFilter('${cli.nit}', 'red')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'red' ? 'bg-red-600 text-white border-red-700' : 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100'}">
+                                            🔴 &gt;90d: ${formatMoney(cli.red_saldo)} (${cli.red_count})
+                                        </button>
+                                    ` : ''}
+                                    ${cli.yellow_count > 0 ? `
+                                        <button onclick="setClientColorFilter('${cli.nit}', 'yellow')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'yellow' ? 'bg-amber-500 text-slate-900 border-amber-600' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'}">
+                                            🟡 61-89d: ${formatMoney(cli.yellow_saldo)} (${cli.yellow_count})
+                                        </button>
+                                    ` : ''}
+                                    ${cli.green_count > 0 ? `
+                                        <button onclick="setClientColorFilter('${cli.nit}', 'green')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'green' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'}">
+                                            🟢 1-59d: ${formatMoney(cli.green_saldo)} (${cli.green_count})
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Saldo and Action Buttons -->
+                            <div class="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0">
+                                <div class="text-right">
+                                    <span class="text-2xs uppercase tracking-wider text-slate-400 font-bold block">Saldo Total Pendiente</span>
+                                    <span class="text-xl sm:text-2xl font-black text-slate-900 mono">${formatMoney(cli.total_saldo)}</span>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    ${actionButtons}
+
+                                    <!-- Expand / Collapse -->
+                                    <button onclick="toggleExpand('${cli.nit}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="${isExpanded ? 'Contraer facturas' : 'Desplegar facturas'}">
+                                        <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Invoices Table Section -->
+                        <div class="${isExpanded ? '' : 'hidden'} border-t border-slate-100 bg-slate-50/60 p-4">
+                            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase text-2xs font-black border-b border-slate-200">
+                                            <th class="py-2.5 px-3">Documento</th>
+                                            <th class="py-2.5 px-3">Emisión</th>
+                                            <th class="py-2.5 px-3">Vencimiento</th>
+                                            <th class="py-2.5 px-3 text-center">Días Mora</th>
+                                            <th class="py-2.5 px-3 text-center">Alerta</th>
+                                            <th class="py-2.5 px-3 text-center">Plazo</th>
+                                            <th class="py-2.5 px-3 text-right">Valor Original</th>
+                                            <th class="py-2.5 px-3 text-right">Saldo a Pagar</th>
+                                            <th class="py-2.5 px-3">Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${invoiceRows.length > 0 ? invoiceRows : '<tr><td colspan="9" class="py-4 text-center text-xs text-slate-400 font-medium">No hay facturas que cumplan este filtro</td></tr>'}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="bg-slate-100 font-black text-xs text-slate-800 border-t border-slate-200">
+                                            <td colspan="7" class="py-2.5 px-3 text-right">SALDO MOSTRADO:</td>
+                                            <td class="py-2.5 px-3 text-right mono text-emerald-800 text-sm">
+                                                ${formatMoney(displayInvoices.reduce((acc, cur) => acc + cur.saldo, 0))}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function toggleExpand(nit) {
+            if (expandedNits.has(nit)) {
+                expandedNits.delete(nit);
+            } else {
+                expandedNits.add(nit);
+            }
+            applyFilters();
+        }
+
+        function toggleExpandAll() {
+            if (expandedNits.size > 0) {
+                expandedNits.clear();
+            } else if (rawData) {
+                rawData.clients.forEach(c => expandedNits.add(c.nit));
+            }
+            applyFilters();
+        }
+
+        // WhatsApp Modal Handling
+        async function openWhatsAppModal(nit, color = 'all') {
+            const reviewDate = document.getElementById('reviewDatePicker').value;
+            const sid = getSessionId();
+            activeWaSelectedColor = color;
+            
+            try {
+                const res = await fetch(`/api/whatsapp/${nit}?review_date=${reviewDate}&color=${color}&session_id=${encodeURIComponent(sid)}`, {
+                    headers: { 'X-Session-ID': sid }
+                });
+                const data = await res.json();
+                
+                activeWaClient = data.client;
+                activeWaTemplates = data.templates;
+
+                document.getElementById('waModalClientTitle').textContent = `${activeWaClient.name} • NIT: ${activeWaClient.nit}`;
+                document.getElementById('waPhoneInput').value = activeWaClient.whatsapp_phone || activeWaClient.phone || '';
+                
+                updateWaTabsUI();
+                updateWaPreview();
+
+                document.getElementById('whatsappModal').classList.remove('hidden');
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                showToast('Error al abrir WhatsApp', 'alert');
+            }
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('whatsappModal').classList.add('hidden');
+        }
+
+        function switchWaColor(color) {
+            activeWaSelectedColor = color;
+            updateWaTabsUI();
+            updateWaPreview();
+        }
+
+        function updateWaTabsUI() {
+            const tabs = [
+                { id: 'btnWaTabAll', key: 'all' },
+                { id: 'btnWaTabRed', key: 'red' },
+                { id: 'btnWaTabYellow', key: 'yellow' },
+                { id: 'btnWaTabGreen', key: 'green' }
+            ];
+
+            tabs.forEach(t => {
+                const btn = document.getElementById(t.id);
+                if (t.key === activeWaSelectedColor) {
+                    btn.className = 'px-2.5 py-2 text-xs font-black rounded-xl border text-center transition bg-[#128C7E] text-white border-[#128C7E] shadow-sm';
+                } else {
+                    btn.className = 'px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition bg-white border-slate-200 text-slate-700 hover:bg-slate-50';
+                }
+            });
+        }
+
+        function updateWaPreview() {
+            if (!activeWaTemplates || !activeWaTemplates[activeWaSelectedColor]) return;
+            const tpl = activeWaTemplates[activeWaSelectedColor];
+            document.getElementById('waPreviewText').textContent = tpl.text;
+        }
+
+        function formatAndVerifyPhone() {
+            let phone = document.getElementById('waPhoneInput').value.replace(/\D/g, '');
+            if (phone.length === 10 && phone.startsWith('3')) {
+                phone = '+57' + phone;
+                document.getElementById('waPhoneInput').value = phone;
+                document.getElementById('waPhoneStatus').textContent = 'Celular válido (+57)';
+                showToast('Número móvil validado (+57)');
+            } else if (phone.length === 12 && phone.startsWith('57')) {
+                phone = '+' + phone;
+                document.getElementById('waPhoneInput').value = phone;
+                showToast('Número validado (+57)');
+            } else {
+                showToast('Verifique el formato: celular colombiano de 10 dígitos', 'alert');
+            }
+        }
+
+        function copyWaText() {
+            const text = document.getElementById('waPreviewText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyTextFeedback');
+                btn.textContent = '¡Copiado!';
+                setTimeout(() => { btn.textContent = 'Copiar Texto'; }, 2000);
+                showToast('Mensaje organizado copiado al portapapeles');
+            });
+        }
+
+        function launchWhatsApp() {
+            const rawPhone = document.getElementById('waPhoneInput').value.replace(/\D/g, '');
+            const text = document.getElementById('waPreviewText').textContent;
+            const encodedText = encodeURIComponent(text);
+
+            let cleanNumber = '';
+            if (rawPhone.length === 10 && rawPhone.startsWith('3')) {
+                cleanNumber = '57' + rawPhone;
+            } else if (rawPhone.length >= 10) {
+                cleanNumber = rawPhone;
+            }
+
+            const url = cleanNumber ? `https://wa.me/${cleanNumber}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
+            window.open(url, '_blank');
+        }
+
+        // Date Controls
+        function onDateChanged() {
+            const dateVal = document.getElementById('reviewDatePicker').value;
+            if (dateVal) {
+                fetchData(dateVal);
+                showToast(`Fecha de revisión actualizada a: ${dateVal}`);
+            }
+        }
+
+        function setQuickDate(type) {
+            if (!rawData) return;
+            if (type === 'report') {
+                fetchData(rawData.metadata.report_date);
+            } else if (type === 'today') {
+                const today = new Date().toISOString().split('T')[0];
+                fetchData(today);
+            }
+        }
+
+        function addDays(days) {
+            const currentVal = document.getElementById('reviewDatePicker').value;
+            const d = currentVal ? new Date(currentVal) : new Date();
+            d.setDate(d.getDate() + days);
+            const newDateStr = d.toISOString().split('T')[0];
+            fetchData(newDateStr);
+        }
+
+        // Upload PDF Modal
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+            loadServerFiles();
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+        }
+
+        async function loadServerFiles() {
+            try {
+                const sid = getSessionId();
+                const res = await fetch(`/api/files?session_id=${encodeURIComponent(sid)}`, {
+                    headers: { 'X-Session-ID': sid }
+                });
+                const data = await res.json();
+                const container = document.getElementById('serverFilesList');
+                container.innerHTML = data.files.map(f => `
+                    <div class="flex items-center justify-between p-2 rounded-xl ${f.is_active ? 'bg-emerald-50 border border-emerald-300' : 'bg-white border border-slate-200'} text-xs">
+                        <div class="flex items-center space-x-2 truncate">
+                            <i data-lucide="file" class="w-4 h-4 ${f.is_active ? 'text-emerald-600' : 'text-slate-400'}"></i>
+                            <span class="font-bold text-slate-800 truncate">${f.name} (${f.size_kb} KB)</span>
+                        </div>
+                        ${f.is_active 
+                            ? '<span class="text-2xs font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">Activo</span>' 
+                            : `<button onclick="selectServerFile('${f.name}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-2xs font-bold">Usar</button>`
+                        }
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function selectServerFile(filename) {
+            try {
+                const sid = getSessionId();
+                const res = await fetch(`/api/select-file?session_id=${encodeURIComponent(sid)}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Session-ID': sid 
+                    },
+                    body: JSON.stringify({ filename })
+                });
+                const data = await res.json();
+                rawData = data.data;
+                renderDashboard();
+                closeUploadModal();
+                showToast(`Reporte cambiado a: ${filename}`);
+            } catch (err) {
+                showToast('Error al seleccionar el archivo', 'alert');
+            }
+        }
+
+        async function handleFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const progress = document.getElementById('uploadProgress');
+            progress.classList.remove('hidden');
+
+            const sid = getSessionId();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`/api/upload?session_id=${encodeURIComponent(sid)}`, {
+                    method: 'POST',
+                    headers: { 'X-Session-ID': sid },
+                    body: formData
+                });
+                const resData = await res.json();
+                if (res.ok) {
+                    rawData = resData.data;
+                    renderDashboard();
+                    closeUploadModal();
+                    showToast('¡PDF de cartera cargado en tu sesión privada!');
+                } else {
+                    showToast(resData.detail || 'Error al procesar el PDF', 'alert');
+                }
+            } catch (err) {
+                showToast('Error en la carga del archivo', 'alert');
+            } finally {
+                progress.classList.add('hidden');
+            }
+        }
+
+        function exportToExcel() {
+            const reviewDate = document.getElementById('reviewDatePicker').value;
+            const sid = getSessionId();
+            window.location.href = `/api/export/excel?review_date=${reviewDate}&session_id=${encodeURIComponent(sid)}`;
+            showToast('Generando y descargando Excel...');
+        }
+
+        function downloadClientPdf(nit, color = 'all') {
+            const reviewDate = document.getElementById('reviewDatePicker').value;
+            const sid = getSessionId();
+            window.location.href = `/api/client-pdf/${nit}?review_date=${reviewDate}&color=${color}&session_id=${encodeURIComponent(sid)}`;
+            showToast('Generando y descargando PDF del cliente...');
+        }
+
+        function downloadActiveWaPdf() {
+            if (!activeWaClient) return;
+            downloadClientPdf(activeWaClient.nit, activeWaSelectedColor);
+        }
+
+        function handleDownloadPdfAndWhatsApp(nit, color) {
+            downloadClientPdf(nit, color);
+            setTimeout(() => {
+                openWhatsAppModal(nit, color);
+            }, 300);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
