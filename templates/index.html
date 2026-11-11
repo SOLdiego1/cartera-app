@@ -114,7 +114,7 @@
                         <span class="text-xs text-slate-500 font-medium" id="reportDateBadge">Fecha emisión: --</span>
                     </div>
                     <h2 class="text-xl font-extrabold text-slate-900 mt-1">Análisis y Gestión de Facturas Vencidas</h2>
-                    <p class="text-xs text-slate-500">Control por semáforo de 3 colores: 🔴 Rojo (>90d), 🟡 Amarillo (61-89d), 🟢 Verde (1-59d).</p>
+                    <p class="text-xs text-slate-500">Control por semáforo de 3 colores: 🔴 Rojo (>60d), 🟡 Amarillo (31-60d), 🟢 Verde (1-30d y al día).</p>
                 </div>
 
                 <!-- Date Controller -->
@@ -166,12 +166,12 @@
                 </div>
             </div>
 
-            <!-- ROJO: > 90 Días -->
+            <!-- ROJO: > 60 Días -->
             <div onclick="filterGlobalColor('red')" class="cursor-pointer bg-red-50/70 rounded-2xl p-5 border-2 border-red-300 card-3d flex flex-col justify-between relative overflow-hidden group">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-full bg-red-600 animate-pulse"></span>
-                        <span class="text-xs font-black uppercase tracking-wider text-red-950">Mora &gt; 90 Días</span>
+                        <span class="text-xs font-black uppercase tracking-wider text-red-950">Mora &gt; 60 Días</span>
                     </div>
                     <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-red-600 text-white uppercase tracking-wider">ROJO</span>
                 </div>
@@ -184,12 +184,12 @@
                 </div>
             </div>
 
-            <!-- AMARILLO: 61 - 89 Días -->
+            <!-- AMARILLO: 31 - 60 Días -->
             <div onclick="filterGlobalColor('yellow')" class="cursor-pointer bg-amber-50/70 rounded-2xl p-5 border-2 border-amber-300 card-3d flex flex-col justify-between relative overflow-hidden group">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                        <span class="text-xs font-black uppercase tracking-wider text-amber-950">Mora 61-89 Días</span>
+                        <span class="text-xs font-black uppercase tracking-wider text-amber-950">Mora 31-60 Días</span>
                     </div>
                     <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-amber-500 text-amber-950 uppercase tracking-wider">AMARILLO</span>
                 </div>
@@ -202,12 +202,12 @@
                 </div>
             </div>
 
-            <!-- VERDE: 1 - 59 Días -->
+            <!-- VERDE: 1 - 30 Días -->
             <div onclick="filterGlobalColor('green')" class="cursor-pointer bg-emerald-50/70 rounded-2xl p-5 border-2 border-emerald-300 card-3d flex flex-col justify-between relative overflow-hidden group">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
-                        <span class="text-xs font-black uppercase tracking-wider text-emerald-950">Mora 1-59 Días</span>
+                        <span class="text-xs font-black uppercase tracking-wider text-emerald-950">Mora 1-30 Días</span>
                     </div>
                     <span class="px-2 py-0.5 rounded-full text-2xs font-black bg-emerald-600 text-white uppercase tracking-wider">VERDE</span>
                 </div>
@@ -267,13 +267,13 @@
                         Todos (<span id="countFilterAll">0</span>)
                     </button>
                     <button onclick="setGlobalFilter('red')" id="btnFilterRed" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-red-700 hover:bg-red-50 border border-slate-200">
-                        🔴 &gt; 90 Días (<span id="countFilterRed">0</span>)
+                        🔴 &gt; 60 Días (<span id="countFilterRed">0</span>)
                     </button>
                     <button onclick="setGlobalFilter('yellow')" id="btnFilterYellow" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-amber-800 hover:bg-amber-50 border border-slate-200">
-                        🟡 61-89 Días (<span id="countFilterYellow">0</span>)
+                        🟡 31-60 Días (<span id="countFilterYellow">0</span>)
                     </button>
                     <button onclick="setGlobalFilter('green')" id="btnFilterGreen" class="global-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-emerald-800 hover:bg-emerald-50 border border-slate-200">
-                        🟢 1-59 Días (<span id="countFilterGreen">0</span>)
+                        🟢 1-30 Días (<span id="countFilterGreen">0</span>)
                     </button>
                 </div>
 
@@ -348,13 +348,13 @@
                             📋 Todas
                         </button>
                         <button onclick="switchWaColor('red')" id="btnWaTabRed" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
-                            🔴 Solo &gt; 90d
+                            🔴 Solo &gt; 60d
                         </button>
                         <button onclick="switchWaColor('yellow')" id="btnWaTabYellow" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
-                            🟡 Solo 61-89d
+                            🟡 Solo 31-60d
                         </button>
                         <button onclick="switchWaColor('green')" id="btnWaTabGreen" class="px-2.5 py-2 text-xs font-bold rounded-xl border text-center transition">
-                            🟢 Solo 1-59d
+                            🟢 Solo 1-30d
                         </button>
                     </div>
                 </div>
@@ -577,19 +577,19 @@
             document.getElementById('kpiTotalClients').textContent = `${summary.total_clients} clientes`;
             document.getElementById('kpiTotalInvoices').textContent = `${summary.total_invoices} facturas`;
 
-            // Rojo > 90 días
+            // Rojo > 60 días
             document.getElementById('kpiRedTotal').textContent = formatMoney(summary.total_red_90);
             document.getElementById('kpiRedCount').textContent = `${summary.count_red_90} facturas`;
             const redPct = summary.total_cartera > 0 ? ((summary.total_red_90 / summary.total_cartera) * 100).toFixed(1) : 0;
             document.getElementById('kpiRedPercent').textContent = `${redPct}%`;
 
-            // Amarillo 61-89 días
+            // Amarillo 31-60 días
             document.getElementById('kpiYellowTotal').textContent = formatMoney(summary.total_yellow_60);
             document.getElementById('kpiYellowCount').textContent = `${summary.count_yellow_60} facturas`;
             const yelPct = summary.total_cartera > 0 ? ((summary.total_yellow_60 / summary.total_cartera) * 100).toFixed(1) : 0;
             document.getElementById('kpiYellowPercent').textContent = `${yelPct}%`;
 
-            // Verde 1-59 días
+            // Verde 1-30 días
             document.getElementById('kpiGreenTotal').textContent = formatMoney(summary.total_green_30);
             document.getElementById('kpiGreenCount').textContent = `${summary.count_green_30} facturas`;
             const grnPct = summary.total_cartera > 0 ? ((summary.total_green_30 / summary.total_cartera) * 100).toFixed(1) : 0;
@@ -665,9 +665,9 @@
                 series: [{
                     name: 'Saldo',
                     data: [
-                        ['🔴 >90 Días', summary.total_red_90],
-                        ['🟡 61-89 Días', summary.total_yellow_60],
-                        ['🟢 1-59 Días', summary.total_green_30]
+                        ['🔴 >60 Días', summary.total_red_90],
+                        ['🟡 31-60 Días', summary.total_yellow_60],
+                        ['🟢 1-30 Días', summary.total_green_30]
                     ]
                 }]
             });
@@ -687,7 +687,7 @@
                 },
                 title: { text: null },
                 xAxis: {
-                    categories: ['🔴 >90 Días (Rojo)', '🟡 61-89 Días (Amarillo)', '🟢 1-59 Días (Verde)'],
+                    categories: ['🔴 >60 Días (Rojo)', '🟡 31-60 Días (Amarillo)', '🟢 1-30 Días (Verde)'],
                     labels: { style: { fontSize: '11px', fontWeight: 'bold' } }
                 },
                 yAxis: {
@@ -819,13 +819,13 @@
 
                     if (inv.alert_level === 'red') {
                         rowBg = 'row-red';
-                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-red inline-flex items-center gap-1">🔴 &gt; 90 Días</span>`;
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-red inline-flex items-center gap-1">🔴 &gt; 60 Días</span>`;
                     } else if (inv.alert_level === 'yellow') {
                         rowBg = 'row-yellow';
-                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-yellow inline-flex items-center gap-1">🟡 61 - 89 Días</span>`;
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-yellow inline-flex items-center gap-1">🟡 31 - 60 Días</span>`;
                     } else {
                         rowBg = 'row-green';
-                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-green inline-flex items-center gap-1">🟢 1 - 59 Días</span>`;
+                        pill = `<span class="px-2.5 py-0.5 rounded-full text-2xs font-black badge-green inline-flex items-center gap-1">🟢 1 - 30 Días</span>`;
                     }
 
                     return `
@@ -848,7 +848,7 @@
                 // Action buttons: Descargar PDF and Enviar por WhatsApp divided separately for color and general
                 let actionButtons = '';
                 if (activeColor !== 'all') {
-                    const colorLabel = activeColor === 'red' ? 'Rojas (>90d)' : activeColor === 'yellow' ? 'Amarillas (61-89d)' : 'Verdes (1-59d)';
+                    const colorLabel = activeColor === 'red' ? 'Rojas (>60d)' : activeColor === 'yellow' ? 'Amarillas (31-60d)' : 'Verdes (1-30d)';
                     actionButtons = `
                         <button onclick="downloadClientPdf('${cli.nit}', '${activeColor}')" class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition gap-1.5 border border-slate-300" title="Descargar PDF de facturas ${colorLabel}">
                             <i data-lucide="file-down" class="w-4 h-4 text-slate-600"></i>
@@ -898,17 +898,17 @@
                                     </button>
                                     ${cli.red_count > 0 ? `
                                         <button onclick="setClientColorFilter('${cli.nit}', 'red')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'red' ? 'bg-red-600 text-white border-red-700' : 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100'}">
-                                            🔴 &gt;90d: ${formatMoney(cli.red_saldo)} (${cli.red_count})
+                                            🔴 &gt;60d: ${formatMoney(cli.red_saldo)} (${cli.red_count})
                                         </button>
                                     ` : ''}
                                     ${cli.yellow_count > 0 ? `
                                         <button onclick="setClientColorFilter('${cli.nit}', 'yellow')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'yellow' ? 'bg-amber-500 text-slate-900 border-amber-600' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'}">
-                                            🟡 61-89d: ${formatMoney(cli.yellow_saldo)} (${cli.yellow_count})
+                                            🟡 31-60d: ${formatMoney(cli.yellow_saldo)} (${cli.yellow_count})
                                         </button>
                                     ` : ''}
                                     ${cli.green_count > 0 ? `
                                         <button onclick="setClientColorFilter('${cli.nit}', 'green')" class="px-2.5 py-1 rounded-lg text-2xs font-black transition border ${activeColor === 'green' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'}">
-                                            🟢 1-59d: ${formatMoney(cli.green_saldo)} (${cli.green_count})
+                                            🟢 1-30d: ${formatMoney(cli.green_saldo)} (${cli.green_count})
                                         </button>
                                     ` : ''}
                                 </div>

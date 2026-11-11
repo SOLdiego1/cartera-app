@@ -134,9 +134,9 @@ def parse_cartera_pdf(pdf_path: str):
 def calculate_aging_for_date(data: dict, review_date_str: str):
     """
     Recalculates days overdue and assigns strictly the 3 designated alert colors:
-    - ROJO: > 90 Días
-    - AMARILLO: 61 a 89 / 90 Días
-    - VERDE: 1 a 59 / 60 Días (y al día)
+    - ROJO: > 60 Días (61 a más días)
+    - AMARILLO: 31 a 60 Días
+    - VERDE: 1 a 30 Días (y al día)
     Invoices inside each client are sorted: ROJOS first, then AMARILLOS, then VERDES.
     Clients are sorted: Clients with ROJAS first, then AMARILLAS, then VERDES.
     """
@@ -185,22 +185,22 @@ def calculate_aging_for_date(data: dict, review_date_str: str):
             vcto_date = datetime.strptime(inv['fec_vcto'], '%Y-%m-%d').date()
             dias_vencida = (review_date - vcto_date).days
 
-            # Exactly the 3 requested tiers:
-            # 1. ROJO: > 90 días
-            # 2. AMARILLO: 61 - 89 / 90 días
-            # 3. VERDE: 1 - 59 / 60 días
-            if dias_vencida > 90:
+            # Exactly the 3 requested tiers by user:
+            # 1. ROJO: > 60 días (61 a más días)
+            # 2. AMARILLO: 31 a 60 días
+            # 3. VERDE: 1 a 30 días (y al día)
+            if dias_vencida > 60:
                 alert_level = 'red'
-                alert_label = '> 90 Días'
+                alert_label = '> 60 Días'
                 alert_badge_class = 'badge-red'
                 order_priority = 1
                 cli_copy['red_saldo'] += inv['saldo']
                 cli_copy['red_count'] += 1
                 summary['total_red_90'] += inv['saldo']
                 summary['count_red_90'] += 1
-            elif dias_vencida >= 60:
+            elif dias_vencida >= 31:
                 alert_level = 'yellow'
-                alert_label = '61 - 89 Días'
+                alert_label = '31 - 60 Días'
                 alert_badge_class = 'badge-yellow'
                 order_priority = 2
                 cli_copy['yellow_saldo'] += inv['saldo']
@@ -209,7 +209,7 @@ def calculate_aging_for_date(data: dict, review_date_str: str):
                 summary['count_yellow_60'] += 1
             else:
                 alert_level = 'green'
-                alert_label = '1 - 59 Días' if dias_vencida > 0 else 'Al Día'
+                alert_label = '1 - 30 Días' if dias_vencida > 0 else 'Al Día'
                 alert_badge_class = 'badge-green'
                 order_priority = 3
                 cli_copy['green_saldo'] += inv['saldo']

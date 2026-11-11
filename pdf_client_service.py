@@ -129,17 +129,17 @@ def generate_client_pdf(
     invoices = client.get('invoices', [])
     if color_filter == 'red':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'red']
-        filter_badge = "FACTURAS MAYOR A 90 DÍAS (ROJO)"
+        filter_badge = "FACTURAS MAYOR A 60 DÍAS (ROJO)"
         badge_bg = colors.HexColor('#FEE2E2')
         badge_txt = colors.HexColor('#991B1B')
     elif color_filter == 'yellow':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'yellow']
-        filter_badge = "FACTURAS DE 61 A 89 DÍAS (AMARILLO)"
+        filter_badge = "FACTURAS DE 31 A 60 DÍAS (AMARILLO)"
         badge_bg = colors.HexColor('#FEF3C7')
         badge_txt = colors.HexColor('#854D0E')
     elif color_filter == 'green':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'green']
-        filter_badge = "FACTURAS DE 1 A 59 DÍAS (VERDE)"
+        filter_badge = "FACTURAS DE 1 A 30 DÍAS (VERDE)"
         badge_bg = colors.HexColor('#DCFCE7')
         badge_txt = colors.HexColor('#166534')
     else:
@@ -295,11 +295,11 @@ def generate_client_pdf(
             Paragraph(f"<b>SALDO TOTAL GENERAL: {format_currency(tot_general)}</b>", ParagraphStyle('TotB', parent=section_title, alignment=2, textColor=colors.HexColor('#0F172A')))
         ],
         [
-            Paragraph(f"• Facturas mayor a 90 días: <b>{format_currency(red_tot)}</b> ({red_cnt} facturas)", cell_style),
-            Paragraph(f"• Facturas de 61 a 89 días: <b>{format_currency(yel_tot)}</b> ({yel_cnt} facturas)", cell_style)
+            Paragraph(f"• Facturas mayor a 60 días: <b>{format_currency(red_tot)}</b> ({red_cnt} facturas)", cell_style),
+            Paragraph(f"• Facturas de 31 a 60 días: <b>{format_currency(yel_tot)}</b> ({yel_cnt} facturas)", cell_style)
         ],
         [
-            Paragraph(f"• Facturas de 1 a 59 días: <b>{format_currency(grn_tot)}</b> ({grn_cnt} facturas)", cell_style),
+            Paragraph(f"• Facturas de 1 a 30 días: <b>{format_currency(grn_tot)}</b> ({grn_cnt} facturas)", cell_style),
             Paragraph("Cupo asignado: " + format_currency(client.get('credit_limit', 0)), cell_style)
         ]
     ]

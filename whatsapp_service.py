@@ -42,13 +42,13 @@ def generate_whatsapp_message_by_color(
 
     if color_filter == 'red':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'red']
-        filter_title = "FACTURAS MAYOR A 90 DÍAS"
+        filter_title = "FACTURAS MAYOR A 60 DÍAS"
     elif color_filter == 'yellow':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'yellow']
-        filter_title = "FACTURAS DE 61 A 89 DÍAS"
+        filter_title = "FACTURAS DE 31 A 60 DÍAS"
     elif color_filter == 'green':
         target_invoices = [inv for inv in invoices if inv.get('alert_level') == 'green']
-        filter_title = "FACTURAS DE 1 A 59 DÍAS"
+        filter_title = "FACTURAS DE 1 A 30 DÍAS"
     else:
         target_invoices = invoices
         filter_title = "DETALLE DE FACTURAS PENDIENTES"
@@ -65,12 +65,12 @@ def generate_whatsapp_message_by_color(
         except:
             vcto_fmt = vcto
 
-        if dias > 90:
-            mora_tag = f"{dias} días vencida (Facturas mayor a 90 días)"
-        elif dias >= 60:
-            mora_tag = f"{dias} días vencida (Facturas de 61 a 89 días)"
+        if dias > 60:
+            mora_tag = f"{dias} días vencida (Facturas mayor a 60 días)"
+        elif dias >= 31:
+            mora_tag = f"{dias} días vencida (Facturas de 31 a 60 días)"
         elif dias > 0:
-            mora_tag = f"{dias} días vencida (Facturas de 1 a 59 días)"
+            mora_tag = f"{dias} días vencida (Facturas de 1 a 30 días)"
         else:
             mora_tag = f"Al día (Vence {vcto_fmt})"
 
@@ -92,9 +92,9 @@ def generate_whatsapp_message_by_color(
 
     # Mandatory Aging Breakdown by Days without icons before words
     aging_breakdown = (
-        f"- Facturas mayor a 90 días: {format_currency(red_total)} ({red_count} facturas)\n"
-        f"- Facturas de 61 a 89 días: {format_currency(yellow_total)} ({yellow_count} facturas)\n"
-        f"- Facturas de 1 a 59 días: {format_currency(green_total)} ({green_count} facturas)"
+        f"- Facturas mayor a 60 días: {format_currency(red_total)} ({red_count} facturas)\n"
+        f"- Facturas de 31 a 60 días: {format_currency(yellow_total)} ({yellow_count} facturas)\n"
+        f"- Facturas de 1 a 30 días: {format_currency(green_total)} ({green_count} facturas)"
     )
 
     # Full structured WhatsApp message with single 22-dash separators
